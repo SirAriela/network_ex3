@@ -5,16 +5,9 @@ import time
 SERVER = 'localhost'
 PORT = 5050
 FORMAT = 'utf-8'
+
+# the size of a single msg
 HEADER = 128
-
-
-def input_format():
-    return {
-        "message": "this is test message",
-        "max_message_size": 20,
-        "window_size": 4,
-        "timeout": 5
-    }
 
 
 def text_handle():
@@ -25,9 +18,26 @@ def file_handle():
     pass
 
 
+def sliding_window_handle(client_socket_window, message_to_send):
+    base = 0
+    current_sequence = 0
+
+    message_to_send = message_to_send.encode(FORMAT)
+    x = [message_to_send[i:i + HEADER] for i in range(0, len(message_to_send), HEADER)]
+    print(x)
+
+    for i in x:
+        client_socket_window.send(i)
+        print(client_socket_window.recv(1024).decode(FORMAT))
+
+
+
 try:
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.connect((SERVER, PORT))
+    if not client_socket:
+        client_socket.close()
+        raise "socket connection broken"
 
     print("Connected to server")
 
@@ -43,13 +53,23 @@ try:
     #         file_handle()
     #     case _:
     #         print("input " + input_type + "is not supported")
-    max_message_size = input()
-    HEADER = int(max_message_size)
-    client_socket.send(max_message_size.encode(FORMAT))
 
-    msg = client_socket.recv(1024).decode(FORMAT)
-    print(msg)
-    client_socket.close()
+    # check from server what is the max size of a single msg
+    size_request = "what size?"
+    client_socket.send(size_request.encode(FORMAT))
 
-except:
-    print("Failed to connect")
+    # the size of a max msg
+    size_response = client_socket.recv(HEADER).decode(FORMAT)
+
+    if not size_response:
+        raise "invalid header size"
+
+    else:
+        HEADER = int(size_response)
+        message = input()
+        sliding_window_handle(client_socket, message)
+
+        client_socket.close()
+
+except socket.error:
+    print("Socket broken")
