@@ -1,4 +1,5 @@
 import socket
+import time
 
 # const variables
 HEADER = 128
@@ -25,6 +26,7 @@ while True:
     print("Got connection from", addr)
 
     data = conn.recv(HEADER).decode(FORMAT)
+    print(data)
 
     if data:
         if data.__str__() == "what size?":
@@ -33,13 +35,20 @@ while True:
         i = 0
         total = ""
 
-        mess = "ack"
-
-        data = conn.recv(HEADER).decode(FORMAT)
-        while data:
-            total += data
-            conn.send((mess + i.__str__()).encode(FORMAT))
-            i = i + 1
+        try:
             data = conn.recv(HEADER).decode(FORMAT)
+            while data:
+                print(data)
+                total += data
+                conn.send(f"ack{i}".encode(FORMAT))
+                print(f"ack{i}")
+                i = i + 1
+                data = conn.recv(HEADER).decode(FORMAT)
+                time.sleep(0.1)
+
+                # time.sleep(2)
+        except Exception as e:
+            print(e)
 
         print(total)
+        conn.close()
