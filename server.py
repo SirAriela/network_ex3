@@ -28,25 +28,28 @@ while True:
     data = conn.recv(HEADER).decode(FORMAT)
     print(data)
 
-    if data:
+    if len(data) <= HEADER:
         if data.__str__() == "what size?":
             HEADER = int(input())
             conn.send(HEADER.__str__().encode(FORMAT))
-        i = 0
+
         total = ""
+        i = 0
 
         try:
             data = conn.recv(HEADER).decode(FORMAT)
             while data:
-                print(data)
-                total += data
-                conn.send(f"ack{i}".encode(FORMAT))
-                print(f"ack{i}")
-                i = i + 1
+                seq, msg = data.split("|", 1)
+                conn.send(f"ack{seq}".encode(FORMAT))
+                print(f"ack{seq}")
+                print(msg)
+
+                if i == int(seq):
+                    total += msg
+                    i += 1
                 data = conn.recv(HEADER).decode(FORMAT)
                 time.sleep(0.1)
 
-                # time.sleep(2)
         except Exception as e:
             print(e)
 
