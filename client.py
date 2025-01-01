@@ -1,32 +1,56 @@
-import random
 import socket
 import time
+import json
 
 # const variables
 SERVER = 'localhost'
 PORT = 5050
 FORMAT = 'utf-8'
-
-# the size of a single msg
 HEADER = 128
+file_path = "C:\\Users\\ariel\\PycharmProjects\\ex_3\\tomer.txt"
+
 
 
 def text_handle():
-    pass
+    """
+    Handles manual text input from the user.
+    """
+    print("Please enter the message you want to send:")
+    return input()
 
 
 def file_handle():
-    pass
+    """
+    Reads content from a file specified by the user and returns it as a string.
+    """
 
+    try:
+        with open(file_path, 'r', encoding=FORMAT) as file:
+            data = json.load(file)
 
-# def check_timer(timers , timeout):
-#     current_time = time.time()
-#     for seq, timestamp in timers.items():
-#         if current_time - timestamp > timeout:
-#             return True
+            if not data:
+                raise ValueError("The file is empty.")
+            print(f"File content read successfully:\n{data}")
+            print(data["message"])
+            print(int(data["window_size"]))
+            print(int(data["timeout"]))
+            sliding_window_handle(client_socket,data["message"],data["window_size"],data["timeout"])
+    except FileNotFoundError:
+        print("Error: File not found. Please check the file path.")
+        return None
+    except ValueError as ve:
+        print(f"Error: {ve}")
+        return None
+    except Exception as e:
+        print(f"Error reading file: {e}")
+        return None
+
 
 
 def sliding_window_handle(client_socket_window, message_to_send, window_size, timeout):
+    """
+    Handles sending the message using a sliding window protocol.
+    """
     window_start = 0
     ack_number = -1
     i = 0
@@ -39,15 +63,13 @@ def sliding_window_handle(client_socket_window, message_to_send, window_size, ti
     seq_num = 0
 
     # for every seq number build max message
-
     while i < len(message_to_send):
-        # calculate the prefix sqe number.
+        # calculate the prefix seq number
         prefix_number = len(f"{seq_num}|".encode(FORMAT))
-        # so we can see how much room we have for the data message
         payload_size = HEADER - prefix_number
 
         if payload_size <= 0:
-            raise ValueError('Invalid payload size, cant send message!')
+            raise ValueError("Invalid payload size, can't send message!")
 
         chunk = message_to_send[i:i + payload_size]
         chunk = f"{seq_num}|".encode(FORMAT) + chunk
@@ -57,7 +79,7 @@ def sliding_window_handle(client_socket_window, message_to_send, window_size, ti
         print(chunks)
 
     # all the data is divided into chunks and ready to be sent
-    window_end = min(window_start + window_size, len(message_to_send))
+    window_end = min(window_start + window_size, len(chunks))
 
     while window_start < len(chunks):
         for i in range(window_start, window_end):
@@ -73,8 +95,6 @@ def sliding_window_handle(client_socket_window, message_to_send, window_size, ti
             client_socket_window.settimeout(timeout)
             ack_data = client_socket_window.recv(128).decode(FORMAT)
 
-            print(ack_data)
-
             if "ack" in ack_data:
                 current_ack_number = int(ack_data.replace("ack", ""))
                 print(current_ack_number)
@@ -86,67 +106,9 @@ def sliding_window_handle(client_socket_window, message_to_send, window_size, ti
                     window_end = min(window_end + 1, len(chunks))
 
         except socket.timeout:
-            print("timout occurd, i dont have the power to continue")
+            print("Timeout occurred, resending unacknowledged chunks.")
 
-    client_socket.close()
-
-
-    #
-    # # see what's bigger the window size or the amount of chunks
-    # window_end = min(window_size, len(chunks))
-    # # we make a list for each message we define which seq number, the msg, timer and whether it's ack or not.
-    # messages = [{"seq": i, "data": chunks[i], "sent_time": 0.0, "acknowledged": False} for i in range(len(chunks))]
-    #
-    # # while there is more messages to send
-    # while window_start < len(chunks):
-    #     # we send the messages  in the window
-    #     for i in range(window_start, window_end):
-    #         if not messages[i]["acknowledged"] and (messages[i]["sent_time"] - time.time() > timeout or messages[i]["sent_time"] == 0.0):
-    #             messages[i]["sent_time"] = time.time()
-    #             client_socket_window.send(messages[i]["data"])
-    #             print("sent:")
-    #             print(chunks[i])
-    #
-    #     try:
-    #         # wait for ack
-    #         current_ack_number = client_socket_window.recv(128).decode(FORMAT)
-    #         print(current_ack_number)
-    #         if "ack" in current_ack_number:
-    #             current_ack_number = int(current_ack_number.replace("ack", ""))
-    #
-    #             if ack_number + 1 == current_ack_number:
-    #                 messages[current_ack_number]["acknowledged"] = True
-    #                 ack_number += 1
-    #                 window_start += 1
-    #                 window_end = min(window_end + 1, len(chunks))
-    #     except socket.timeout:
-    #         print("problem")
-    # # ------------------------------------------------------------------------------------------------------
-
-    # while base < window_size:
-    #     while current_sequence < base + window_size:
-    #         client_socket_window.send(x[current_sequence].encode(FORMAT))
-    #         timers[current_sequence] = time.time()
-    #         current_sequence += 1
-    #
-    #     try:
-    #         current_msg = client_socket_window.recv(HEADER).decode(FORMAT)
-    #         if current_msg.__contains__("ack"):
-    #             current_ack_number = int(current_msg.replace("ack", ""))
-    #             if ack_number + 1 == current_ack_number:
-    #                 base = base + 1
-    #                 ack_number = ack_number + 1
-    #                 del timers[ack_number]
-
-    #
-    #     except socket.timeout:
-    #         raise "Connection timed out"
-    #
-    # print(x)
-    #
-    # for i in x:
-    #     client_socket_window.send(i)
-    #     print(client_socket_window.recv(1024).decode(FORMAT))
+    client_socket_window.close()
 
 
 if __name__ == '__main__':
@@ -157,43 +119,29 @@ if __name__ == '__main__':
 
         if not client_socket:
             client_socket.close()
-            raise "socket connection broken"
+            raise "Socket connection broken"
 
         print("Connected to server")
 
-        # print("please select way for client to send message")
-        # print("for input text type: text")
-        # print("for file input type: file")
-        # input_type = input()
-        #
-        # match input_type:
-        #     case "text":
-        #         text_handle()
-        #     case "file":
-        #         file_handle()
-        #     case _:
-        #         print("input " + input_type + "is not supported")
+        # User chooses between text input or file input
+        print("Select input type:")
+        print("1 - Text input")
+        print("2 - File input")
+        input_type = input()
 
-        # check from server what is the max size of a single msg
-        size_request = "what size?"
-        client_socket.send(size_request.encode(FORMAT))
+        # Handle input type
+        if input_type == "1":
+            message = text_handle()
+        elif input_type == "2":
+            client_socket.send(input_type.encode(FORMAT))
+            HEADER = int(client_socket.recv(HEADER).decode(FORMAT))
+            file_handle()
 
-        # the size of a max msg
-        size_response = client_socket.recv(HEADER).decode(FORMAT)
+        # Check max size with server
+    #    size_request = "what size?"
+     #   client_socket.send(size_request.encode(FORMAT))
+      #  size_response = client_socket.recv(HEADER).decode(FORMAT)
 
-        if not size_response:
-            raise "invalid header size"
-
-        else:
-            HEADER = int(size_response)
-            print("input the message you want to send")
-            message = input()
-            print("input the size of sliding widow")
-            window_size1 = int(input())
-            print("input time")
-            timeout1 = int(input())
-
-            sliding_window_handle(client_socket, message, window_size1, timeout1)
 
 
     except socket.error:

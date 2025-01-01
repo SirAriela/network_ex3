@@ -1,11 +1,13 @@
 import socket
 import time
+import json
 
 # const variables
 HEADER = 128
 SERVER = 'localhost'
 PORT = 5050
 FORMAT = 'utf-8'
+file_path = "C:\\Users\\ariel\\PycharmProjects\\ex_3\\tomer.txt"
 
 
 def input_format():
@@ -29,9 +31,14 @@ while True:
     print(data)
 
     if len(data) <= HEADER:
-        if data.__str__() == "what size?":
+        if data.__str__() == "1":
             HEADER = int(input())
             conn.send(HEADER.__str__().encode(FORMAT))
+        elif data.__str__() == "2":
+            with open(file_path, 'r', encoding=FORMAT) as file:
+                data = json.load(file)
+                HEADER = data["max_message_size"]
+                conn.send(HEADER.__str__().encode(FORMAT))
 
         total = ""
         i = 0
