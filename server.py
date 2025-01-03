@@ -10,15 +10,6 @@ FORMAT = 'utf-8'
 file_path = "C:\\Users\\ariel\\PycharmProjects\\ex_3\\tomer.txt"
 
 
-def input_format():
-    return {
-        "message": "this is test message",
-        "max_message_size": 20,
-        "window_size": 4,
-        "timeout": 5
-    }
-
-
 while True:
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((SERVER, PORT))
@@ -32,6 +23,7 @@ while True:
 
     if len(data) <= HEADER:
         if data.__str__() == "1":
+            print("input max size byte for client")
             HEADER = int(input())
             conn.send(HEADER.__str__().encode(FORMAT))
         elif data.__str__() == "2":
@@ -45,7 +37,7 @@ while True:
 
         try:
             data = conn.recv(HEADER).decode(FORMAT)
-            while data:
+            while data and len(data) <= HEADER:
                 seq, msg = data.split("|", 1)
                 conn.send(f"ack{seq}".encode(FORMAT))
                 print(f"ack{seq}")
@@ -59,6 +51,6 @@ while True:
 
         except Exception as e:
             print(e)
-
+        print("[message received from client]")
         print(total)
         conn.close()

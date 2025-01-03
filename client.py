@@ -10,47 +10,43 @@ HEADER = 128
 file_path = "C:\\Users\\ariel\\PycharmProjects\\ex_3\\tomer.txt"
 
 
-
 def text_handle():
-    """
-    Handles manual text input from the user.
-    """
-    print("Please enter the message you want to send:")
-    return input()
+    print("input data for server")
+    message = input()
+    print("select sliding window size (bytes)")
+    window_size = int(input())
+    print("input timeout for server messages")
+    timeout = int(input())
+
+    sliding_window_handle(client_socket, message, window_size, timeout)
 
 
 def file_handle():
     """
     Reads content from a file specified by the user and returns it as a string.
     """
-
     try:
         with open(file_path, 'r', encoding=FORMAT) as file:
             data = json.load(file)
 
             if not data:
                 raise ValueError("The file is empty.")
-            print(f"File content read successfully:\n{data}")
-            print(data["message"])
-            print(int(data["window_size"]))
-            print(int(data["timeout"]))
-            sliding_window_handle(client_socket,data["message"],data["window_size"],data["timeout"])
+
+            sliding_window_handle(client_socket, data["message"], data["window_size"], data["timeout"])
     except FileNotFoundError:
         print("Error: File not found. Please check the file path.")
         return None
+
     except ValueError as ve:
         print(f"Error: {ve}")
         return None
+
     except Exception as e:
         print(f"Error reading file: {e}")
         return None
 
 
-
 def sliding_window_handle(client_socket_window, message_to_send, window_size, timeout):
-    """
-    Handles sending the message using a sliding window protocol.
-    """
     window_start = 0
     ack_number = -1
     i = 0
@@ -76,11 +72,14 @@ def sliding_window_handle(client_socket_window, message_to_send, window_size, ti
         chunks.append({"seq": seq_num, "data": chunk, "sent_time": 0.0, "ack": False})
         seq_num += 1
         i += payload_size
-        print(chunks)
+    print(f"dividing the data into chunks {HEADER} size")
+    print(chunks)
 
     # all the data is divided into chunks and ready to be sent
     window_end = min(window_start + window_size, len(chunks))
 
+    print()
+    print("sending messages")
     while window_start < len(chunks):
         for i in range(window_start, window_end):
             current_time = time.time()
@@ -89,7 +88,7 @@ def sliding_window_handle(client_socket_window, message_to_send, window_size, ti
                     chunks[i]["sent_time"] == 0.0 or (current_time - chunks[i]["sent_time"]) > timeout):
                 client_socket_window.send(chunks[i]["data"])
                 chunks[i]["sent_time"] = current_time
-                print("sent: ", chunks[i]["data"])
+                print("sent to server: ", chunks[i]["data"])
 
         try:
             client_socket_window.settimeout(timeout)
@@ -97,8 +96,7 @@ def sliding_window_handle(client_socket_window, message_to_send, window_size, ti
 
             if "ack" in ack_data:
                 current_ack_number = int(ack_data.replace("ack", ""))
-                print(current_ack_number)
-                print(ack_number + 1)
+                print(f"Acknowledgment message M{current_ack_number}")
                 if ack_number + 1 == current_ack_number:
                     chunks[current_ack_number]["ack"] = True
                     ack_number += 1
@@ -131,18 +129,24 @@ if __name__ == '__main__':
 
         # Handle input type
         if input_type == "1":
-            message = text_handle()
+            client_socket.send(input_type.encode(FORMAT))
+            print("[wait for server response...]")
+            HEADER = int(client_socket.recv(HEADER).decode(FORMAT))
+            if not HEADER:
+                raise ValueError("Invalid header received")
+            else:
+                text_handle()
+
         elif input_type == "2":
             client_socket.send(input_type.encode(FORMAT))
+            print("[wait for server response...]")
             HEADER = int(client_socket.recv(HEADER).decode(FORMAT))
-            file_handle()
-
-        # Check max size with server
-    #    size_request = "what size?"
-     #   client_socket.send(size_request.encode(FORMAT))
-      #  size_response = client_socket.recv(HEADER).decode(FORMAT)
-
-
+            if not HEADER:
+                raise ValueError("Invalid header received")
+            else:
+                file_handle()
+        else:
+            raise "Invalid input please provide a valid input 1 or 2"
 
     except socket.error:
         print("Socket broken")

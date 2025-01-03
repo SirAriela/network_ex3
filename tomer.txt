@@ -1,6 +1,6 @@
 {
         "message": "Rabbits are small, herbivorous mammals belonging to the family Leporidae. Known for their long ears, soft fur, and distinctive hopping movement, they are found in many parts of the world and are widely recognized for their playful and gentle nature. Rabbits come in a variety of sizes, colors, and breeds, ranging from the small Netherland Dwarf to the larger Flemish Giant.",
-        "max_message_size": 10,
-        "window_size": 4,
+        "max_message_size": 20,
+        "window_size": 6,
         "timeout": 5
     }
