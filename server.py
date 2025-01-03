@@ -7,7 +7,7 @@ HEADER = 128
 SERVER = 'localhost'
 PORT = 5050
 FORMAT = 'utf-8'
-file_path = "C:\\Users\\ariel\\PycharmProjects\\ex_3\\tomer.txt"
+file_path = "/home/parallels/Desktop/tomer.txt"
 
 
 while True:
