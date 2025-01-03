@@ -7,7 +7,7 @@ SERVER = 'localhost'
 PORT = 5050
 FORMAT = 'utf-8'
 HEADER = 128
-file_path = "C:\\Users\\ariel\\PycharmProjects\\ex_3\\tomer.txt"
+file_path = "/home/parallels/Desktop/tomer.txt"
 
 
 def text_handle():
